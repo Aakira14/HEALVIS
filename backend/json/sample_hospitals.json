@@ -1,0 +1,28 @@
+{
+  "hospitals": [
+    {
+      "name": "Central General Hospital",
+      "type": "hospital",
+      "address": "100 Main St",
+      "phone": "+1-555-0100",
+      "lat": 37.7749,
+      "lon": -122.4194
+    },
+    {
+      "name": "Neighborhood Clinic",
+      "type": "clinic",
+      "address": "45 1st Ave",
+      "phone": "+1-555-0101",
+      "lat": 37.7755,
+      "lon": -122.4180
+    },
+    {
+      "name": "24/7 Urgent Care",
+      "type": "clinic",
+      "address": "9 Market St",
+      "phone": "+1-555-0102",
+      "lat": 37.7760,
+      "lon": -122.4170
+    }
+  ]
+}

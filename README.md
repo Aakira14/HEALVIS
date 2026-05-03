@@ -117,6 +117,35 @@ Healvis does NOT provide medical diagnosis. It is only for educational and infor
 * Personalized health tracking
 
 ---
+## 📸 Healvis UI Preview
+
+---
+
+## 🌐 Landing Page
+
+### 🏠 Home
+![Home](frontend/resources/landingpage/home.png)
+
+### 👤 About Me
+![About Me](frontend/resources/landingpage/aboutme.png)
+
+### ⚡ Capabilities
+![Capabilities](frontend/resources/landingpage/capabilities.png)
+
+---
+
+## 🧑‍💻 Dashboard
+
+### 🔐 Login Page
+![Login](frontend/resources/dashboard/login.png)
+
+### 💬 Chat Area
+![Chat Area](frontend/resources/dashboard/chatarea.png)
+
+### 🗺️ Working Map
+![Working Map](frontend/resources/dashboard/workingmap.png)
+
+---
 
 ## 👨‍💻 Author
 

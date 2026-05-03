@@ -313,14 +313,14 @@
         
         // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyBzQRl-fYFjghotaWzXGTnpZUd902DQGSo",
-            authDomain: "healvis-18b43.firebaseapp.com",
-            projectId: "healvis-18b43",
-            storageBucket: "healvis-18b43.firebasestorage.app",
-            messagingSenderId: "9996969930",
-            appId: "1:9996969930:web:fd8b8295dc53b52590d133",
-            measurementId: "G-3QF980ZRZG"
-        };
+        apiKey: prompt("Enter your Firebase API Key:"),
+        authDomain: prompt("Enter your Firebase Auth Domain:"),
+        projectId: prompt("Enter your Firebase Project ID:"),
+        storageBucket: prompt("Enter your Firebase Storage Bucket:"),
+        messagingSenderId: prompt("Enter your Messaging Sender ID:"),
+        appId: prompt("Enter your App ID:"),
+        measurementId: prompt("Enter your Measurement ID:")
+       };
         
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);

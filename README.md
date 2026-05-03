@@ -94,7 +94,7 @@ DATABASE_URL=your_database_url_here
 ## 🎥 Demo
 
 * Live Demo: *(add your link here)*
-* Video Demo: *(add Loom/YouTube link here)*
+* Video Demo: *(https://youtu.be/YcRmwnsrJSQ)*
 
 ---
 

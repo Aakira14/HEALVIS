@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>HEALVIS - AI Health Assistant</title>
+    
+    <!-- Tailwind CSS: use local built file `styles.tailwind.css` in production/build -->
+    <link rel="stylesheet" href="styles.tailwind.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --primary-light: #a78bfa;
+            --primary-dark: #5b21b6;
+            --accent: #06b6d4;
+            --accent-light: #22d3ee;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-darker: #020617;
+            --bg-card: #1e293b;
+            --bg-elevated: #334155;
+            --bg-hover: #1e293b;
+            --border: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #06b6d4 100%);
+            --gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.2);
+            --shadow-xl: 0 20px 40px rgba(0,0,0,0.3);
+            --shadow-glow: 0 0 30px rgba(124, 58, 237, 0.25);
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-weight: 400;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background var(--transition-fast), color var(--transition-fast);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(124, 58, 237, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
+        }
+
+        .dashboard-container {
+            min-height: 100vh;
+            display: flex;
+            background: var(--bg-dark);
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 280px;
+            background: rgba(2, 6, 23, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(51, 65, 85, 0.5);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            transition: transform var(--transition-smooth);
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        .sidebar-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(6, 182, 212, 0.05));
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+
+        .new-chat-btn:hover {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(6, 182, 212, 0.1));
+            border-color: rgba(124, 58, 237, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .new-chat-btn:active {
+            transform: translateY(0);
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0.75rem;
+        }
+
+        .chat-history-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .chat-history-title {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.75rem;
+            padding: 0 0.5rem;
+            font-weight: 600;
+        }
+
+        .chat-history-item {
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-history-item:hover {
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--primary-light);
+            transform: translateX(4px);
+        }
+
+        .chat-history-item.active {
+            background: rgba(124, 58, 237, 0.25);
+            color: var(--primary-light);
+            font-weight: 500;
+        }
+
+        .sidebar-footer {
+            padding: 1rem 0.75rem;
+            border-top: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-light);
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .user-name {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border-color: rgba(239, 68, 68, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 1) 0%, rgba(30, 41, 59, 0.5) 100%);
+        }
+
+        .welcome-section {
+            margin-bottom: 2rem;
+            animation: slideDown var(--transition-smooth) ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .welcome-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* CHAT MESSAGES */
+        .chat-messages {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 400px);
+            min-height: 400px;
+            animation: fadeInUp var(--transition-smooth) ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-message {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            animation: messageAppear var(--transition) ease-out;
+            align-items: flex-start;
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+        }
+
+        .bot-avatar {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .user-message-avatar {
+            background: rgba(124, 58, 237, 0.2);
+            color: var(--primary-light);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        .message-text {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .message-text p {
+            margin: 0.5rem 0;
+        }
+
+        .message-text p:first-child {
+            margin-top: 0;
+        }
+
+        .message-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-text ul {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .message-text li {
+            margin: 0.4rem 0;
+            line-height: 1.6;
+        }
+
+        .message-text strong {
+            color: var(--accent-light);
+            font-weight: 600;
+        }
+
+        /* Chat Input Container */
+        .container_chat_bot {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 1rem;
+            animation: slideUp var(--transition-smooth) ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container-chat-options {
+            position: relative;
+            display: flex;
+            background: var(--gradient-primary);
+            border-radius: 14px;
+            padding: 1.5px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.3);
+            transition: all var(--transition-smooth);
+        }
+
+        .container-chat-options:focus-within {
+            box-shadow: 0 0 40px rgba(124, 58, 237, 0.5);
+            padding: 2px;
+        }
+
+        .chat {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+            border-radius: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .chat-bot {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .chat-bot textarea {
+            background: transparent;
+            border: none;
+            width: 100%;
+            min-height: 50px;
+            max-height: 150px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 400;
+            padding: 1rem 1.25rem;
+            resize: none;
+            outline: none;
+            transition: all var(--transition-fast);
+        }
+
+        .chat-bot textarea::placeholder {
+            color: var(--text-muted);
+            transition: all var(--transition-fast);
+        }
+
+        .chat-bot textarea:focus::placeholder {
+            color: rgba(124, 58, 237, 0.5);
+        }
+
+        .chat .options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: rgba(2, 6, 23, 0.5);
+            border-top: 1px solid rgba(51, 65, 85, 0.3);
+            gap: 0.75rem;
+        }
+
+        .btns-add {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btns-add button {
+            display: flex;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            padding: 0.5rem;
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btns-add button:hover {
+            transform: scale(1.1);
+            color: var(--primary-light);
+            background: rgba(124, 58, 237, 0.15);
+        }
+
+        .btns-add button:active {
+            transform: scale(0.95);
+        }
+
+        .btns-add button svg,
+        .btns-add button i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-submit {
+            display: flex;
+            padding: 1px;
+            background: var(--gradient-primary);
+            border-radius: 10px;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            transition: all var(--transition-fast);
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-submit i {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            background: var(--bg-card);
+            border-radius: 9px;
+            color: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-submit:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.5);
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .btn-submit:hover i {
+            color: var(--accent-light);
+            transform: rotate(20deg) scale(1.1);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* Quick Action Tags */
+        .tags {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            animation: fadeInUp var(--transition-smooth) ease-out 0.1s both;
+        }
+
+        .tags span {
+            padding: 0.6rem 1rem;
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: all var(--transition-fast);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .tags span:hover {
+            background: rgba(124, 58, 237, 0.2);
+            border-color: var(--primary-light);
+            color: var(--primary-light);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(124, 58, 237, 0.25);
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            padding: 1rem 0;
+        }
+
+        .typing-indicator.show {
+            display: flex;
+            animation: fadeIn var(--transition-fast) ease-out;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: 0s; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 1; }
+            40% { transform: translateY(-8px); opacity: 0.7; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Sidebar Toggle */
+        .sidebar-toggle {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 200;
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            color: var(--text-primary);
+            padding: 0.6rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: rgba(124, 58, 237, 0.5);
+            color: var(--primary-light);
+            transform: scale(1.1);
+        }
+
+        .sidebar-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 1024px) {
+            .main-content {
+                padding: 1.5rem;
+            }
+
+            .chat-messages {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 260px;
+                box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .sidebar-toggle {
+                display: flex;
+            }
+
+            .welcome-section {
+                margin-bottom: 1.5rem;
+            }
+
+            .welcome-title {
+                font-size: 1.4rem;
+            }
+
+            .welcome-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .chat-messages {
+                padding: 1rem;
+                min-height: 350px;
+                max-height: calc(100vh - 350px);
+            }
+
+            .chat-message {
+                gap: 0.75rem;
+            }
+
+            .message-avatar {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+
+            .message-text {
+                font-size: 0.9rem;
+            }
+
+            .container_chat_bot {
+                gap: 0.75rem;
+            }
+
+            .tags {
+                gap: 0.5rem;
+            }
+
+            .tags span {
+                padding: 0.5rem 0.85rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.75rem;
+            }
+
+            .welcome-title {
+                font-size: 1.2rem;
+            }
+
+            .welcome-subtitle {
+                font-size: 0.85rem;
+            }
+
+            .chat-messages {
+                padding: 0.75rem;
+                min-height: 300px;
+            }
+
+            .chat-message {
+                margin-bottom: 1rem;
+            }
+
+            .message-text {
+                font-size: 0.85rem;
+                line-height: 1.6;
+            }
+
+            .chat-bot textarea {
+                font-size: 0.9rem;
+                padding: 0.75rem 1rem;
+                min-height: 44px;
+            }
+
+            .tags {
+                flex-direction: column;
+            }
+
+            .tags span {
+                width: 100%;
+                text-align: center;
+            }
+
+            .btns-add {
+                gap: 0.4rem;
+            }
+
+            .btns-add button {
+                width: 28px;
+                height: 28px;
+                padding: 0.3rem;
+            }
+        }
+    </style>
+</head>
+<body class="body-main" data-theme="dark" data-lang="en" data-dir="ltr">
+    
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span>&lt;HEALVIS/&gt;</span>
+                </div>
+                <button class="new-chat-btn" onclick="startNewChat()" title="Start a new conversation">
+                    <i class="fas fa-plus"></i>
+                    <span>New Chat</span>
+                </button>
+            </div>
+            
+            <div class="chat-history" id="chatHistory">
+                <!-- Chat history will be populated by JavaScript -->
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="" alt="User Avatar" class="user-avatar" id="userAvatar">
+                    <span class="user-name" id="userName">User</span>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()" title="Logout from your account">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Mobile Toggle Button -->
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <h1 class="welcome-title">Welcome back, <span id="welcomeName">User</span>! 👋</h1>
+                <p class="welcome-subtitle">I'm your AI health companion. Ask me anything about your health and wellness.</p>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <!-- Chat Messages -->
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message">
+                        <div class="message-avatar bot-avatar">
+                            <i class="fas fa-sparkles"></i>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">HEALVIS AI</div>
+                            <div class="message-text">Hello! I'm HEALVIS, your AI health assistant. I'm here to help you with health insights, symptom information, and finding nearby healthcare facilities. How can I assist you today?</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="container_chat_bot">
+                    <div class="container-chat-options">
+                        <div class="chat">
+                            <div class="chat-bot">
+                                <textarea
+                                    id="chat_bot"
+                                    name="chat_bot"
+                                    placeholder="Ask me anything about your health... ✦"
+                                ></textarea>
+                            </div>
+                            <div class="options">
+                                <div class="btns-add">
+                                    <button title="Find Hospitals & Clinics" onclick="findNearbyHospitals()" class="action-btn">
+                                        <i class="fas fa-location-dot"></i>
+                                    </button>
+                                    <button title="Add image" onclick="document.getElementById('imageInput').click()" class="action-btn" id="imageBtn">
+                                        <i class="fas fa-image"></i>
+                                    </button>
+                                    <button title="Voice input" onclick="toggleVoiceInput()" class="action-btn" id="micBtn">
+                                        <i class="fas fa-microphone"></i>
+                                    </button>
+                                </div>
+                                <button class="btn-submit" onclick="sendMessage()" title="Send message (Enter)">
+                                    <i>
+                                        <i class="fas fa-paper-plane"></i>
+                                    </i>
+                                </button>
+                            </div>
+                            <!-- Hidden image input -->
+                            <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                            <!-- Image preview container -->
+                            <div id="imagePreview" style="display: none; margin-top: 0.75rem;">
+                                <div style="background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 8px; padding: 0.75rem; display: flex; align-items: center; gap: 0.75rem;">
+                                    <img id="previewImage" src="" style="max-width: 60px; max-height: 60px; border-radius: 6px; object-fit: cover;">
+                                    <div style="flex: 1; color: var(--text-secondary); font-size: 0.85rem;">
+                                        <span id="imageName">Image selected</span>
+                                    </div>
+                                    <button onclick="removeImage()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 0.4rem; border-radius: 4px; transition: all 0.2s;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tags">
+                        <span onclick="useTag('I have a headache, what should I do?')">💊 Headache Help</span>
+                        <span onclick="useTag('What foods boost immunity?')">🥗 Immunity Foods</span>
+                        <span onclick="useTag('Home remedies for cold and cough')">🍵 Cold Remedies</span>
+                        <span onclick="findNearbyHospitals()">🏥 Find Hospitals</span>
+                    </div>
+                </div>
+
+                <!-- Map Section -->
+                <div id="hospitalMapSection" class="mt-12 hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-hospital text-violet-500"></i>
+                            Nearby Healthcare Facilities
+                        </h3>
+                        <div id="locationStatus" class="text-sm text-slate-300 ml-4">Location: unknown</div>
+                        <span class="text-xs text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                            30km Radius
+                        </span>
+                    </div>
+                    <div class="relative">
+                        <div id="map" class="h-[450px] w-full rounded-2xl border border-slate-700 shadow-glow overflow-hidden z-0"></div>
+
+                        <!-- Center-on-me button -->
+                        <button id="centerOnMeBtn" title="Center on me" onclick="centerOnUser()"
+                                class="absolute right-4 top-4 bg-emerald-500 hover:bg-emerald-400 text-white p-2 rounded-full shadow-lg border border-emerald-600 z-50">
+                            <i class="fas fa-location-arrow"></i>
+                        </button>
+
+                        <!-- Legend (top-left) -->
+                        <div id="mapLegend" class="absolute left-4 top-4 bg-slate-900/70 text-slate-100 text-sm p-2 rounded-md border border-slate-700 z-40">
+                            <div class="flex items-center gap-2">
+                                <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="red marker" class="w-4 h-6"/>
+                                <div>Hospitals / Clinics (red)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="hospitalList" class="mt-4 grid grid-cols-1 gap-2"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Check if user is logged in
+        const userData = localStorage.getItem('healvis_user');
+        if (!userData) {
+            window.location.href = 'login.html';
+        } else {
+            const user = JSON.parse(userData);
+            window.currentUserId = user.email || user.sub || 'default_user';
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('welcomeName').textContent = user.name.split(' ')[0];
+            if (user.picture) {
+                document.getElementById('userAvatar').src = user.picture;
+            }
+        }
+
+        // Chat History Management
+        let chatHistory = JSON.parse(localStorage.getItem('healvis_chat_history') || '[]');
+        let currentChatId = null;
+        let currentMessages = [];
+
+        // Map variables
+        let map;
+        let userMarker;
+        let hospitalMarkers = [];
+        const redIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // Initialize chat history
+        function initChatHistory() {
+            renderChatHistory();
+            if (chatHistory.length > 0) {
+                loadChat(chatHistory[0].id);
+            } else {
+                startNewChat();
+            }
+        }
+
+        // Render chat history in sidebar
+        function renderChatHistory() {
+            const chatHistoryContainer = document.getElementById('chatHistory');
+            
+            const today = chatHistory.filter(chat => isToday(chat.timestamp));
+            const yesterday = chatHistory.filter(chat => isYesterday(chat.timestamp));
+            const previous = chatHistory.filter(chat => !isToday(chat.timestamp) && !isYesterday(chat.timestamp));
+            
+            let html = '';
+            
+            if (today.length > 0) {
+                html += '<div class="chat-history-section"><div class="chat-history-title">Today</div>';
+                today.forEach(chat => html += createChatHistoryItem(chat));
+                html += '</div>';
+            }
+            
+            if (yesterday.length > 0) {
+                html += '<div class="chat-history-section"><div class="chat-history-title">Yesterday</div>';
+                yesterday.forEach(chat => html += createChatHistoryItem(chat));
+                html += '</div>';
+            }
+            
+            if (previous.length > 0) {
+                html += '<div class="chat-history-section"><div class="chat-history-title">Previous</div>';
+                previous.forEach(chat => html += createChatHistoryItem(chat));
+                html += '</div>';
+            }
+            
+            chatHistoryContainer.innerHTML = html;
+        }
+
+        function createChatHistoryItem(chat) {
+            const isActive = chat.id === currentChatId ? 'active' : '';
+            return `<div class="chat-history-item ${isActive}" onclick="loadChat('${chat.id}')" title="${chat.title}">
+                <i class="fas fa-message"></i>
+                <span>${chat.title}</span>
+            </div>`;
+        }
+
+        function isToday(timestamp) {
+            const date = new Date(timestamp);
+            const today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+
+        function isYesterday(timestamp) {
+            const date = new Date(timestamp);
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            return date.toDateString() === yesterday.toDateString();
+        }
+
+        // Start new chat
+        function startNewChat() {
+            currentChatId = 'chat_' + Date.now();
+            currentMessages = [];
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="chat-message">
+                    <div class="message-avatar bot-avatar">
+                        <i class="fas fa-sparkles"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">HEALVIS AI</div>
+                        <div class="message-text">Hello! I'm HEALVIS, your AI health assistant. I'm here to help you with health insights, symptom information, and finding nearby healthcare facilities. How can I assist you today?</div>
+                    </div>
+                </div>
+            `;
+            renderChatHistory();
+            
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        // Load chat
+        function loadChat(chatId) {
+            currentChatId = chatId;
+            const chat = chatHistory.find(c => c.id === chatId);
+            if (chat) {
+                currentMessages = chat.messages;
+                renderMessages();
+                renderChatHistory();
+            }
+            
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        // Render messages
+        function renderMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+            let html = '';
+            
+            currentMessages.forEach(msg => {
+                const formattedText = formatMessageText(msg.text);
+                if (msg.sender === 'user') {
+                    let imageHTML = '';
+                    if (msg.image) {
+                        imageHTML = `<img src="${msg.image}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-top: 0.5rem; border: 1px solid rgba(124, 58, 237, 0.3);">`;
+                    }
+                    html += `<div class="chat-message">
+                        <div class="message-avatar user-message-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">You</div>
+                            <div class="message-text">${formattedText}${imageHTML}</div>
+                        </div>
+                    </div>`;
+                } else {
+                    html += `<div class="chat-message">
+                        <div class="message-avatar bot-avatar">
+                            <i class="fas fa-sparkles"></i>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">HEALVIS AI</div>
+                            <div class="message-text">${formattedText}</div>
+                        </div>
+                    </div>`;
+                }
+            });
+            
+            chatMessages.innerHTML = html;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Save chat
+        function saveChat() {
+            if (currentMessages.length === 0) return;
+            
+            const title = currentMessages[0].text.substring(0, 30) + (currentMessages[0].text.length > 30 ? '...' : '');
+            
+            const existingIndex = chatHistory.findIndex(c => c.id === currentChatId);
+            const chatData = {
+                id: currentChatId,
+                title: title,
+                messages: currentMessages,
+                timestamp: new Date().toISOString()
+            };
+            
+            if (existingIndex >= 0) {
+                chatHistory[existingIndex] = chatData;
+            } else {
+                chatHistory.unshift(chatData);
+            }
+            
+            if (chatHistory.length > 50) {
+                chatHistory = chatHistory.slice(0, 50);
+            }
+            
+            localStorage.setItem('healvis_chat_history', JSON.stringify(chatHistory));
+            renderChatHistory();
+        }
+
+        // Handle logout
+        function handleLogout() {
+            localStorage.removeItem('healvis_user');
+            window.location.href = 'login.html';
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('chat_bot');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            currentMessages.push({ sender: 'user', text: message });
+            // remember last user message for symptom-based hospital search
+            window.lastUserMessage = message;
+            addMessageToUI(message, 'user');
+            input.value = '';
+
+            saveChat();
+            showTypingIndicator();
+
+            try {
+                let response;
+                // If there's an uploaded image file, send as multipart FormData
+                if (uploadedImage && uploadedImage.file) {
+                    const fd = new FormData();
+                    fd.append('message', message);
+                    fd.append('conversationHistory', JSON.stringify(currentMessages.slice(0, -1)));
+                    fd.append('userId', window.currentUserId);
+                    if (window.lastKnownLocation?.latitude) fd.append('latitude', window.lastKnownLocation.latitude);
+                    if (window.lastKnownLocation?.longitude) fd.append('longitude', window.lastKnownLocation.longitude);
+                    fd.append('image', uploadedImage.file, uploadedImage.name);
+
+                    response = await fetch('http://localhost:3000/api/chat', {
+                        method: 'POST',
+                        body: fd
+                    });
+                } else {
+                    response = await fetch('http://localhost:3000/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: message,
+                            conversationHistory: currentMessages.slice(0, -1),
+                            userId: window.currentUserId,
+                            latitude: window.lastKnownLocation?.latitude,
+                            longitude: window.lastKnownLocation?.longitude
+                        })
+                    });
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentMessages.push({ sender: 'bot', text: data.response });
+                    addMessageToUI(data.response, 'bot');
+                    saveChat();
+                    // If the user's message looks like a symptom/concern, automatically
+                    // center on user and search for relevant hospitals.
+                    try {
+                        const triggerKeywords = ['pain','chest','heart','breath','bleed','fever','pregnant','child','baby','headache','stroke','sob','shortness','trauma','surgery','urgent','emergency'];
+                        const userMsg = (message || '').toLowerCase();
+                        const shouldTrigger = triggerKeywords.some(k => userMsg.includes(k));
+                        if (shouldTrigger) {
+                            // center on user first (may prompt for geolocation)
+                            await centerOnUser();
+                            // small delay to ensure map is ready
+                            setTimeout(() => {
+                                findNearbyHospitals();
+                            }, 800);
+                        }
+                    } catch (e) {
+                        console.warn('Auto hospital trigger failed:', e);
+                    }
+                } else {
+                    const errorMessage = data.error || 'Sorry, I encountered an error. Please try again.';
+                    currentMessages.push({ sender: 'bot', text: errorMessage });
+                    addMessageToUI(errorMessage, 'bot');
+                    saveChat();
+                }
+            } catch (error) {
+                console.error('Chat API error:', error);
+                const errorMessage = 'Sorry, I\'m having trouble connecting. Please check your internet connection and try again.';
+                currentMessages.push({ sender: 'bot', text: errorMessage });
+                addMessageToUI(errorMessage, 'bot');
+                saveChat();
+            } finally {
+                hideTypingIndicator();
+            }
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator show';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar bot-avatar">
+                    <i class="fas fa-sparkles"></i>
+                </div>
+                <div class="message-content">
+                    <div class="message-sender">HEALVIS AI</div>
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Add message to UI
+        function addMessageToUI(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+            
+            const formattedText = formatMessageText(text);
+            
+            if (sender === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="message-avatar user-message-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">You</div>
+                        <div class="message-text">${formattedText}</div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-avatar bot-avatar">
+                        <i class="fas fa-sparkles"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">HEALVIS AI</div>
+                        <div class="message-text">${formattedText}</div>
+                    </div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Format message text
+        function formatMessageText(text) {
+            let formatted = text
+                .replace(/^###\s+(.+)$/gm, '<h3 class="text-lg font-bold text-violet-400 mt-4 mb-2">$1</h3>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^[•\-\*]\s+(.+)$/gm, '<li>$1</li>')
+                .replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            if (formatted.includes('<li>')) {
+                formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+            }
+            
+            if (!formatted.startsWith('<')) {
+                formatted = '<p>' + formatted + '</p>';
+            }
+            
+            return formatted;
+        }
+
+        // Use tag
+        function useTag(tag) {
+            document.getElementById('chat_bot').value = tag;
+            document.getElementById('chat_bot').focus();
+        }
+
+        // Initialize or update map view
+        function initMap(lat, lon) {
+            const mapSection = document.getElementById('hospitalMapSection');
+            mapSection.classList.remove('hidden');
+            
+            if (!map) {
+                map = L.map('map').setView([lat, lon], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+            } else {
+                map.setView([lat, lon], 14);
+            }
+
+            if (userMarker) map.removeLayer(userMarker);
+            userMarker = L.marker([lat, lon]).addTo(map)
+                .bindPopup("<b>You are here 📍</b>")
+                .openPopup();
+            
+            // Smooth scroll to map
+            setTimeout(() => {
+                mapSection.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+
+        // Focus on a hospital marker by index
+        function focusHospital(index) {
+            const marker = hospitalMarkers[index];
+            if (!marker) return;
+            const latlng = marker.getLatLng();
+            map.setView(latlng, 16);
+            marker.openPopup();
+        }
+
+        // Center the map on the user's location (uses lastKnownLocation if available)
+        async function centerOnUser() {
+            try {
+                let lat, lon;
+                if (window.lastKnownLocation && window.lastKnownLocation.latitude && window.lastKnownLocation.longitude) {
+                    lat = window.lastKnownLocation.latitude;
+                    lon = window.lastKnownLocation.longitude;
+                } else if (navigator.geolocation) {
+                    const pos = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+                    });
+                    lat = pos.coords.latitude;
+                    lon = pos.coords.longitude;
+                    window.lastKnownLocation = { latitude: lat, longitude: lon };
+                } else {
+                    alert('Geolocation not available');
+                    return;
+                }
+
+                if (!map) {
+                    initMap(lat, lon);
+                    return;
+                }
+
+                map.setView([lat, lon], 15);
+                if (userMarker) {
+                    userMarker.setLatLng([lat, lon]);
+                    userMarker.openPopup();
+                } else {
+                    userMarker = L.marker([lat, lon]).addTo(map).bindPopup("<b>You are here 📍</b>").openPopup();
+                }
+            } catch (err) {
+                console.error('centerOnUser error:', err);
+                alert('Unable to center on your location. Please enable location services.');
+            }
+        }
+
+        // Find nearby hospitals
+        async function findNearbyHospitals() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+
+            const input = document.getElementById('chat_bot');
+            input.value = 'Locating healthcare facilities... 🏥';
+            input.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const { latitude, longitude } = position.coords;
+
+                    // store last known location globally so chat can include it
+                    window.lastKnownLocation = { latitude, longitude };
+
+                try {
+                    // Show and update map
+                    initMap(latitude, longitude);
+
+                    // Parallel fetch from our backend (Overpass API) and DuckDuckGo for search insights
+                    const symptomText = window.lastUserMessage || '';
+                    const hospitalPromise = fetch('http://localhost:3000/api/hospitals/nearby', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ latitude, longitude, radius: 30000, symptom: symptomText })
+                    }).then(res => res.json());
+
+                    // Integrate DuckDuckGo search engine stuff 🦆🔍
+                    const ddgPromise = fetch('https://api.duckduckgo.com/?q=hospital+near+me&format=json')
+                        .then(res => res.json())
+                        .catch(err => { console.error('DuckDuckGo API Error:', err); return { RelatedTopics: [] }; });
+
+                    const [data, ddgData] = await Promise.all([hospitalPromise, ddgPromise]);
+
+                    if (data.success && data.hospitals.length > 0) {
+                        // Clear old hospital markers
+                        hospitalMarkers.forEach(m => map.removeLayer(m));
+                        hospitalMarkers = [];
+
+                        // Add new red markers to Leaflet map
+                        data.hospitals.forEach(h => {
+                            const marker = L.marker([h.lat, h.lon], { icon: redIcon }).addTo(map)
+                                .bindPopup(`<b>🏥 ${h.name}</b><br>${h.address}<br>Distance: ${h.distance}m`);
+                            hospitalMarkers.push(marker);
+                        });
+
+                        // Fit map to show all hospital markers so markers are visible without zooming
+                        try {
+                            if (hospitalMarkers.length > 0) {
+                                const group = L.featureGroup(hospitalMarkers);
+                                map.fitBounds(group.getBounds().pad(0.2));
+                                // Center on the top (best match) hospital
+                                focusHospital(0);
+                            }
+                        } catch (e) {
+                            console.warn('fitBounds failed:', e);
+                        }
+
+                        // Populate clickable hospital list under map
+                        const listEl = document.getElementById('hospitalList');
+                        listEl.innerHTML = '';
+                        data.hospitals.forEach((h, i) => {
+                            const item = document.createElement('div');
+                            item.className = 'p-3 bg-slate-800 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700';
+                            item.innerHTML = `<div class="font-semibold text-slate-100">${h.name}</div><div class="text-xs text-slate-400">${h.address} • ${h.distance}m</div>`;
+                            item.onclick = () => focusHospital(i);
+                            listEl.appendChild(item);
+                        });
+
+                        let message = `📍 **Nearby Healthcare Facilities Found!**\n\nI've located **${data.hospitals.length}** facilities including hospitals, clinics, and pharmacies within 30km. I've marked them on the map below with red pointers! 🗺️\n\n`;
+                        data.hospitals.slice(0, 5).forEach((h, i) => {
+                            message += `${i + 1}. **${h.name}** (${h.distance}m away)\n`;
+                        });
+
+                        // Append DuckDuckGo "Search Engine Stuff" results 🌐
+                        if (ddgData && ddgData.RelatedTopics && ddgData.RelatedTopics.length > 0) {
+                            message += `\n### 🔍 Search Engine Insights (DuckDuckGo)\n`;
+                            ddgData.RelatedTopics.slice(0, 3).forEach(item => {
+                                if (item.Text && item.FirstURL) {
+                                    message += `• **${item.Text.substring(0, 80)}...**\n`;
+                                }
+                            });
+                        }
+                        currentMessages.push({ sender: 'bot', text: message });
+                        addMessageToUI(message, 'bot');
+                        saveChat();
+                    } else {
+                        const msg = 'I couldn\'t find any hospitals within 30km of your location. 📍';
+                        currentMessages.push({ sender: 'bot', text: msg });
+                        addMessageToUI(msg, 'bot');
+                        saveChat();
+                    }
+                } catch (error) {
+                    console.error('Hospital search error:', error);
+
+                    // Try the server-side sample fallback endpoint before giving up
+                    try {
+                        const sampleRes = await fetch('http://localhost:3000/api/hospitals/sample');
+                        const sampleData = await sampleRes.json();
+                        if (sampleData && sampleData.success && sampleData.hospitals && sampleData.hospitals.length > 0) {
+                            // Clear old markers
+                            hospitalMarkers.forEach(m => map.removeLayer(m));
+                            hospitalMarkers = [];
+
+                            // Compute distances and show sample hospitals
+                            function computeDistance(lat1, lon1, lat2, lon2) {
+                                const R = 6371e3;
+                                const p1 = lat1 * Math.PI / 180;
+                                const p2 = lat2 * Math.PI / 180;
+                                const dp = (lat2 - lat1) * Math.PI / 180;
+                                const dl = (lon2 - lon1) * Math.PI / 180;
+                                const a = Math.sin(dp / 2) * Math.sin(dp / 2) +
+                                          Math.cos(p1) * Math.cos(p2) *
+                                          Math.sin(dl / 2) * Math.sin(dl / 2);
+                                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                                return Math.round(R * c);
+                            }
+
+                            const hospitals = sampleData.hospitals.map(h => ({
+                                ...h,
+                                distance: computeDistance(latitude, longitude, h.lat, h.lon)
+                            }));
+
+
+                            hospitals.forEach(h => {
+                                const marker = L.marker([h.lat, h.lon], { icon: redIcon }).addTo(map)
+                                    .bindPopup(`<b>🏥 ${h.name}</b><br>${h.address}<br>Distance: ${h.distance}m`);
+                                hospitalMarkers.push(marker);
+                            });
+
+                            // Fit and focus on best sample hospital
+                            try {
+                                if (hospitalMarkers.length > 0) {
+                                    const group = L.featureGroup(hospitalMarkers);
+                                    map.fitBounds(group.getBounds().pad(0.2));
+                                    focusHospital(0);
+                                }
+                            } catch (e) { console.warn('fitBounds sample failed:', e); }
+
+                            // Populate clickable hospital list for sample data
+                            const listEl = document.getElementById('hospitalList');
+                            listEl.innerHTML = '';
+                            hospitals.forEach((h, i) => {
+                                const item = document.createElement('div');
+                                item.className = 'p-3 bg-slate-800 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700';
+                                item.innerHTML = `<div class="font-semibold text-slate-100">${h.name}</div><div class="text-xs text-slate-400">${h.address} • ${h.distance}m</div>`;
+                                item.onclick = () => focusHospital(i);
+                                listEl.appendChild(item);
+                            });
+
+                            let message = `📍 **Nearby Healthcare Facilities (Sample Data)**\n\nI couldn't reach the live map service, so I'm showing sample facilities nearby.\n\n`;
+                            hospitals.slice(0,5).forEach((h,i) => {
+                                message += `${i+1}. **${h.name}** (${h.distance}m away)\n`;
+                            });
+
+                            currentMessages.push({ sender: 'bot', text: message });
+                            addMessageToUI(message, 'bot');
+                            saveChat();
+                        } else {
+                            const msg = 'I encountered an error while searching for hospitals. Please try again. 🛠️';
+                            currentMessages.push({ sender: 'bot', text: msg });
+                            addMessageToUI(msg, 'bot');
+                            saveChat();
+                        }
+                    } catch (sampleErr) {
+                        console.error('Sample fallback error:', sampleErr);
+                        const msg = 'I encountered an error while searching for hospitals. Please try again. 🛠️';
+                        currentMessages.push({ sender: 'bot', text: msg });
+                        addMessageToUI(msg, 'bot');
+                        saveChat();
+                    }
+                }
+
+                input.value = '';
+                input.disabled = false;
+            }, (error) => {
+                alert('Unable to get your location. Please enable location services.');
+                input.value = '';
+                input.disabled = false;
+            });
+        }
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Send message on Enter key
+        document.getElementById('chat_bot').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            
+            if (window.innerWidth <= 768 && 
+                sidebar.classList.contains('open') && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // Initialize on load
+        initChatHistory();
+
+        // ===================== VOICE-TO-TEXT FUNCTIONALITY =====================
+        let voiceRecognition = null;
+        let isRecording = false;
+
+        // Initialize voice recognition
+        function initVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Speech Recognition not supported in your browser. Try Chrome, Edge, or Safari.');
+                return false;
+            }
+
+            voiceRecognition = new SpeechRecognition();
+            voiceRecognition.continuous = false;
+            voiceRecognition.interimResults = true;
+            voiceRecognition.lang = 'en-US';
+
+            voiceRecognition.onstart = () => {
+                isRecording = true;
+                const micBtn = document.getElementById('micBtn');
+                micBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+                micBtn.style.color = 'var(--error)';
+                micBtn.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                const textarea = document.getElementById('chat_bot');
+                textarea.placeholder = '🎤 Listening... (speak clearly)';
+            };
+
+            voiceRecognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                const textarea = document.getElementById('chat_bot');
+                if (finalTranscript) {
+                    textarea.value += finalTranscript;
+                } else if (interimTranscript) {
+                    textarea.value = interimTranscript;
+                }
+            };
+
+            voiceRecognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                const textarea = document.getElementById('chat_bot');
+                if (event.error === 'no-speech') {
+                    textarea.placeholder = '🎤 No speech detected. Try again.';
+                } else {
+                    textarea.placeholder = `🎤 Error: ${event.error}`;
+                }
+                resetVoiceButton();
+            };
+
+            voiceRecognition.onend = () => {
+                isRecording = false;
+                resetVoiceButton();
+            };
+
+            return true;
+        }
+
+        // Toggle voice input
+        function toggleVoiceInput() {
+            if (!voiceRecognition) {
+                if (!initVoiceRecognition()) return;
+            }
+
+            if (isRecording) {
+                voiceRecognition.stop();
+            } else {
+                const textarea = document.getElementById('chat_bot');
+                const currentValue = textarea.value;
+                voiceRecognition.start();
+            }
+        }
+
+        // Reset voice button to default state
+        function resetVoiceButton() {
+            const micBtn = document.getElementById('micBtn');
+            micBtn.style.background = '';
+            micBtn.style.color = '';
+            micBtn.style.borderColor = '';
+            const textarea = document.getElementById('chat_bot');
+            textarea.placeholder = 'Ask me anything about your health... ✦';
+        }
+
+        // ===================== IMAGE UPLOAD & ANALYSIS FUNCTIONALITY =====================
+        let uploadedImage = null;
+
+        // Handle image upload
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size must be less than 5MB');
+                return;
+            }
+
+            // Read file as data URL for preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedImage = {
+                    data: e.target.result,
+                    name: file.name,
+                    file: file,
+                    type: file.type,
+                    size: file.size
+                };
+
+                // Show preview
+                const preview = document.getElementById('imagePreview');
+                const previewImg = document.getElementById('previewImage');
+                const imageName = document.getElementById('imageName');
+
+                previewImg.src = uploadedImage.data;
+                imageName.textContent = file.name;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove selected image
+        function removeImage() {
+            uploadedImage = null;
+            const preview = document.getElementById('imagePreview');
+            preview.style.display = 'none';
+            document.getElementById('imageInput').value = '';
+        }
+
+        // Send message with image analysis
+        async function sendMessage() {
+            const input = document.getElementById('chat_bot');
+            const message = input.value.trim();
+
+            if (!message && !uploadedImage) return;
+
+            // Add user message to chat
+            let userMessage = message;
+            currentMessages.push({ sender: 'user', text: userMessage, image: uploadedImage?.data });
+            window.lastUserMessage = message;
+
+            // Display user message with image
+            addMessageToUI(userMessage, 'user', uploadedImage?.data);
+            input.value = '';
+            // keep a reference to the file we will send, then clear the UI preview
+            const attachImage = uploadedImage;
+            removeImage();
+
+            saveChat();
+            showTypingIndicator();
+
+            try {
+                // Prepare payload; if attachImage exists, send FormData
+                let response;
+                if (attachImage && attachImage.file) {
+                    const fd = new FormData();
+                    fd.append('message', message);
+                    fd.append('conversationHistory', JSON.stringify(currentMessages.slice(0, -1)));
+                    fd.append('userId', window.currentUserId);
+                    if (window.lastKnownLocation?.latitude) fd.append('latitude', window.lastKnownLocation.latitude);
+                    if (window.lastKnownLocation?.longitude) fd.append('longitude', window.lastKnownLocation.longitude);
+                    fd.append('image', attachImage.file, attachImage.name);
+
+                    response = await fetch('http://localhost:3000/api/chat', {
+                        method: 'POST',
+                        body: fd
+                    });
+                } else {
+                    const payload = {
+                        message: message,
+                        conversationHistory: currentMessages.slice(0, -1),
+                        userId: window.currentUserId,
+                        latitude: window.lastKnownLocation?.latitude,
+                        longitude: window.lastKnownLocation?.longitude
+                    };
+
+                    response = await fetch('http://localhost:3000/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentMessages.push({ sender: 'bot', text: data.response });
+                    addMessageToUI(data.response, 'bot');
+                    saveChat();
+
+                    // Auto-trigger hospital search for symptom-related messages
+                    try {
+                        const triggerKeywords = ['pain','chest','heart','breath','bleed','fever','pregnant','child','baby','headache','stroke','sob','shortness','trauma','surgery','urgent','emergency'];
+                        const userMsg = (message || '').toLowerCase();
+                        const shouldTrigger = triggerKeywords.some(k => userMsg.includes(k));
+                        if (shouldTrigger) {
+                            await centerOnUser();
+                            setTimeout(() => {
+                                findNearbyHospitals();
+                            }, 800);
+                        }
+                    } catch (e) {
+                        console.warn('Auto hospital trigger failed:', e);
+                    }
+                } else {
+                    const errorMessage = data.error || 'Sorry, I encountered an error. Please try again.';
+                    currentMessages.push({ sender: 'bot', text: errorMessage });
+                    addMessageToUI(errorMessage, 'bot');
+                    saveChat();
+                }
+            } catch (error) {
+                console.error('Chat API error:', error);
+                const errorMessage = 'Sorry, I\'m having trouble connecting. Please check your internet connection and try again.';
+                currentMessages.push({ sender: 'bot', text: errorMessage });
+                addMessageToUI(errorMessage, 'bot');
+                saveChat();
+            } finally {
+                hideTypingIndicator();
+            }
+        }
+
+        // Update addMessageToUI to support images
+        function addMessageToUI(text, sender, imageData) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+
+            const formattedText = formatMessageText(text);
+
+            if (sender === 'user') {
+                let imageHTML = '';
+                if (imageData) {
+                    imageHTML = `<img src="${imageData}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-top: 0.5rem; border: 1px solid rgba(124, 58, 237, 0.3);">`;
+                }
+                messageDiv.innerHTML = `
+                    <div class="message-avatar user-message-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">You</div>
+                        <div class="message-text">${formattedText}${imageHTML}</div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-avatar bot-avatar">
+                        <i class="fas fa-sparkles"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">HEALVIS AI</div>
+                        <div class="message-text">${formattedText}</div>
+                    </div>
+                `;
+            }
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Override original addMessageToUI function with new version that supports images
+        window.addMessageToUI = addMessageToUI;
+    </script>
+</body>
+</html>
